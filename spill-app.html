@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spill ☕ — Tea-spilling social app</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,700;0,900;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pink:   #FF4F8B;
+    --yellow: #FFD166;
+    --teal:   #06D6A0;
+    --purple: #845EC2;
+    --coral:  #FF6B6B;
+    --bg:     #FFF9F0;
+    --dark:   #1A0A2E;
+    --card:   #FFFFFF;
+    --border: rgba(26,10,46,0.10);
+    --shadow: 0 4px 24px rgba(132,94,194,0.13);
+    --radius: 20px;
+    --font-head: 'Fraunces', serif;
+    --font-body: 'DM Sans', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--dark);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Noise texture overlay ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 0;
+  }
+
+  /* ── Pages ── */
+  .page { display: none; min-height: 100vh; position: relative; z-index: 1; }
+  .page.active { display: block; }
+
+  /* ── Nav ── */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(255,249,240,0.88);
+    backdrop-filter: blur(12px);
+    border-bottom: 1.5px solid var(--border);
+    padding: 0 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 60px;
+  }
+  .logo {
+    font-family: var(--font-head);
+    font-weight: 900; font-size: 1.5rem;
+    color: var(--pink);
+    cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .logo span { color: var(--dark); }
+  .nav-links { display: flex; gap: 8px; }
+  .nav-btn {
+    padding: 7px 18px; border-radius: 50px;
+    border: 1.5px solid var(--border);
+    background: transparent;
+    font-family: var(--font-body); font-size: 0.85rem; font-weight: 600;
+    cursor: pointer; transition: all 0.2s;
+    color: var(--dark);
+  }
+  .nav-btn:hover { background: var(--dark); color: #fff; border-color: var(--dark); }
+  .nav-btn.primary { background: var(--pink); color: #fff; border-color: var(--pink); }
+  .nav-btn.primary:hover { background: #e0326e; border-color: #e0326e; }
+
+  /* ── Hero ── */
+  .hero {
+    padding: 80px 24px 60px;
+    max-width: 900px; margin: 0 auto;
+    text-align: center;
+  }
+  .hero-badge {
+    display: inline-block;
+    background: var(--yellow); color: var(--dark);
+    padding: 5px 16px; border-radius: 50px;
+    font-size: 0.8rem; font-weight: 600;
+    margin-bottom: 24px;
+    letter-spacing: 0.05em; text-transform: uppercase;
+  }
+  .hero h1 {
+    font-family: var(--font-head);
+    font-size: clamp(2.8rem, 7vw, 5.5rem);
+    line-height: 1.05;
+    font-weight: 900;
+    margin-bottom: 20px;
+  }
+  .hero h1 em { font-style: italic; color: var(--pink); }
+  .hero p {
+    font-size: 1.1rem; color: rgba(26,10,46,0.65);
+    max-width: 520px; margin: 0 auto 36px;
+    line-height: 1.7;
+  }
+  .hero-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .btn {
+    padding: 14px 32px; border-radius: 50px;
+    font-family: var(--font-body); font-size: 1rem; font-weight: 600;
+    cursor: pointer; border: none; transition: all 0.2s;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn-pink { background: var(--pink); color: #fff; box-shadow: 0 6px 20px rgba(255,79,139,0.35); }
+  .btn-pink:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(255,79,139,0.45); }
+  .btn-outline { background: transparent; color: var(--dark); border: 2px solid var(--dark); }
+  .btn-outline:hover { background: var(--dark); color: #fff; }
+  .btn-teal { background: var(--teal); color: #fff; box-shadow: 0 6px 20px rgba(6,214,160,0.35); }
+  .btn-teal:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(6,214,160,0.45); }
+  .btn-yellow { background: var(--yellow); color: var(--dark); box-shadow: 0 6px 20px rgba(255,209,102,0.4); }
+  .btn-yellow:hover { transform: translateY(-2px); }
+  .btn-purple { background: var(--purple); color: #fff; box-shadow: 0 6px 20px rgba(132,94,194,0.35); }
+  .btn-purple:hover { transform: translateY(-2px); }
+  .btn-sm { padding: 9px 20px; font-size: 0.88rem; }
+
+  /* ── Cards grid ── */
+  .section { padding: 40px 24px; max-width: 1000px; margin: 0 auto; }
+  .section-title {
+    font-family: var(--font-head);
+    font-size: 1.8rem; font-weight: 700;
+    margin-bottom: 24px;
+  }
+  .section-title span { color: var(--pink); }
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+  }
+
+  /* ── Spill Card ── */
+  .spill-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    border: 1.5px solid var(--border);
+    padding: 24px;
+    box-shadow: var(--shadow);
+    transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .spill-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 5px;
+  }
+  .spill-card.pink::before   { background: linear-gradient(90deg, var(--pink), var(--coral)); }
+  .spill-card.yellow::before { background: linear-gradient(90deg, var(--yellow), #ffb347); }
+  .spill-card.teal::before   { background: linear-gradient(90deg, var(--teal), #4ecdc4); }
+  .spill-card.purple::before { background: linear-gradient(90deg, var(--purple), var(--pink)); }
+  .spill-card:hover { transform: translateY(-4px); box-shadow: 0 12px 36px rgba(132,94,194,0.18); }
+
+  .card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .avatar {
+    width: 46px; height: 46px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem; font-weight: 700; flex-shrink: 0;
+    font-family: var(--font-head);
+  }
+  .av-pink   { background: #ffeef4; color: var(--pink); }
+  .av-teal   { background: #e0fdf4; color: #059669; }
+  .av-yellow { background: #fefce8; color: #b45309; }
+  .av-purple { background: #f3e8ff; color: var(--purple); }
+  .card-name { font-weight: 700; font-size: 1rem; }
+  .card-meta { font-size: 0.78rem; color: rgba(26,10,46,0.45); margin-top: 2px; }
+  .tag {
+    display: inline-block;
+    padding: 3px 10px; border-radius: 50px;
+    font-size: 0.72rem; font-weight: 600;
+    margin: 3px 3px 3px 0;
+  }
+  .tag-pink   { background: #ffeef4; color: var(--pink); }
+  .tag-teal   { background: #e0fdf4; color: #059669; }
+  .tag-yellow { background: #fefce8; color: #b45309; }
+  .tag-purple { background: #f3e8ff; color: var(--purple); }
+  .tag-coral  { background: #fff1f0; color: #e03e3e; }
+  .card-story {
+    font-size: 0.9rem; color: rgba(26,10,46,0.7);
+    line-height: 1.6; margin-top: 12px;
+    border-top: 1px solid var(--border); padding-top: 12px;
+  }
+  .card-footer {
+    margin-top: 14px; padding-top: 12px;
+    border-top: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .card-date { font-size: 0.75rem; color: rgba(26,10,46,0.38); }
+  .react-btn {
+    background: none; border: 1.5px solid var(--border);
+    border-radius: 50px; padding: 4px 12px;
+    font-size: 0.82rem; cursor: pointer;
+    transition: all 0.15s; font-family: var(--font-body);
+    color: var(--dark);
+  }
+  .react-btn:hover { background: var(--pink); color: #fff; border-color: var(--pink); }
+
+  /* ── Form page ── */
+  .form-wrap {
+    max-width: 640px; margin: 0 auto;
+    padding: 40px 24px;
+  }
+  .form-title {
+    font-family: var(--font-head);
+    font-size: 2.2rem; font-weight: 900;
+    margin-bottom: 8px;
+  }
+  .form-subtitle { color: rgba(26,10,46,0.55); margin-bottom: 36px; font-size: 0.95rem; }
+  .form-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    border: 1.5px solid var(--border);
+    padding: 32px;
+    box-shadow: var(--shadow);
+  }
+  .form-group { margin-bottom: 22px; }
+  label {
+    display: block; font-weight: 600; font-size: 0.88rem;
+    margin-bottom: 7px; color: var(--dark);
+  }
+  label .required { color: var(--pink); }
+  input[type=text], input[type=number], input[type=email],
+  select, textarea {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    font-family: var(--font-body); font-size: 0.95rem;
+    background: var(--bg); color: var(--dark);
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--pink);
+    box-shadow: 0 0 0 3px rgba(255,79,139,0.12);
+  }
+  textarea { resize: vertical; min-height: 100px; }
+  .radio-group { display: flex; gap: 10px; flex-wrap: wrap; }
+  .radio-pill input { display: none; }
+  .radio-pill label {
+    display: block; padding: 8px 18px;
+    border: 1.5px solid var(--border);
+    border-radius: 50px; cursor: pointer;
+    font-size: 0.88rem; font-weight: 500;
+    transition: all 0.15s;
+    margin: 0;
+  }
+  .radio-pill input:checked + label {
+    background: var(--pink); color: #fff; border-color: var(--pink);
+  }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .step-indicator {
+    display: flex; gap: 8px; margin-bottom: 28px;
+  }
+  .step-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--border);
+    transition: all 0.3s;
+  }
+  .step-dot.active { background: var(--pink); width: 24px; border-radius: 4px; }
+  .step-dot.done   { background: var(--teal); }
+
+  /* ── Alert / Banner ── */
+  .alert {
+    padding: 14px 18px; border-radius: 12px;
+    font-size: 0.88rem; line-height: 1.5;
+    margin-bottom: 20px;
+    display: flex; gap: 10px; align-items: flex-start;
+  }
+  .alert-info    { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+  .alert-success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+  .alert-warning { background: #fefce8; border: 1px solid #fef08a; color: #854d0e; }
+  .alert-error   { background: #fff1f0; border: 1px solid #fecaca; color: #991b1b; }
+
+  /* ── Approval page ── */
+  .approval-wrap {
+    max-width: 560px; margin: 0 auto;
+    padding: 60px 24px;
+    text-align: center;
+  }
+  .approval-icon {
+    width: 80px; height: 80px; border-radius: 50%;
+    margin: 0 auto 24px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.2rem;
+  }
+  .icon-question { background: #ffeef4; }
+  .icon-success  { background: #e0fdf4; }
+  .icon-rejected { background: #fff1f0; }
+
+  /* ── Storage bar ── */
+  .storage-bar {
+    background: var(--card); border: 1.5px solid var(--border);
+    border-radius: var(--radius); padding: 16px 20px;
+    margin-bottom: 24px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .bar-track {
+    flex: 1; height: 8px; background: #f0e8ff;
+    border-radius: 4px; overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%; border-radius: 4px;
+    background: linear-gradient(90deg, var(--pink), var(--purple));
+    transition: width 0.5s ease;
+  }
+  .bar-label { font-size: 0.8rem; font-weight: 600; white-space: nowrap; color: var(--dark); }
+
+  /* ── Empty state ── */
+  .empty-state {
+    text-align: center; padding: 60px 24px;
+    color: rgba(26,10,46,0.4);
+  }
+  .empty-state .empty-icon { font-size: 3rem; margin-bottom: 12px; }
+  .empty-state p { font-size: 0.95rem; }
+
+  /* ── Toast ── */
+  #toast {
+    position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: var(--dark); color: #fff;
+    padding: 12px 24px; border-radius: 50px;
+    font-size: 0.9rem; font-weight: 500;
+    z-index: 999; transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+    white-space: nowrap;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ── Profile page ── */
+  .profile-header {
+    background: linear-gradient(135deg, var(--pink) 0%, var(--purple) 100%);
+    padding: 40px 24px 60px;
+    color: #fff; text-align: center;
+    position: relative;
+  }
+  .profile-avatar {
+    width: 80px; height: 80px; border-radius: 50%;
+    background: rgba(255,255,255,0.25);
+    margin: 0 auto 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-head); font-size: 2rem; font-weight: 900;
+    border: 3px solid rgba(255,255,255,0.5);
+  }
+  .profile-name { font-family: var(--font-head); font-size: 1.6rem; font-weight: 700; }
+  .profile-sub  { opacity: 0.75; font-size: 0.88rem; margin-top: 4px; }
+  .profile-body { max-width: 700px; margin: -30px auto 0; padding: 0 24px 40px; }
+  .stat-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    background: var(--card); border-radius: 16px;
+    border: 1.5px solid var(--border);
+    padding: 16px; text-align: center;
+    box-shadow: var(--shadow);
+  }
+  .stat-num { font-family: var(--font-head); font-size: 1.8rem; font-weight: 900; color: var(--pink); }
+  .stat-lbl { font-size: 0.75rem; color: rgba(26,10,46,0.5); margin-top: 2px; }
+
+  /* ── Pending page ── */
+  .pending-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    border: 1.5px solid var(--border);
+    padding: 20px 24px;
+    box-shadow: var(--shadow);
+    margin-bottom: 16px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    flex-wrap: wrap;
+  }
+  .pending-info { flex: 1; }
+  .pending-name { font-weight: 700; margin-bottom: 4px; }
+  .pending-sub  { font-size: 0.82rem; color: rgba(26,10,46,0.5); }
+  .pending-actions { display: flex; gap: 8px; }
+
+  /* ── Link display ── */
+  .link-box {
+    background: var(--bg); border: 1.5px dashed rgba(255,79,139,0.4);
+    border-radius: 12px; padding: 12px 16px;
+    font-size: 0.82rem; word-break: break-all;
+    color: var(--purple); margin-top: 12px;
+    display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  }
+  .copy-btn {
+    background: var(--pink); color: #fff; border: none;
+    padding: 5px 12px; border-radius: 8px;
+    font-size: 0.78rem; cursor: pointer; white-space: nowrap;
+    font-family: var(--font-body); font-weight: 600;
+    flex-shrink: 0;
+  }
+  .copy-btn:hover { background: #e0326e; }
+
+  /* ── Tabs ── */
+  .tabs { display: flex; gap: 4px; margin-bottom: 24px; background: #f0e8ff; border-radius: 12px; padding: 4px; }
+  .tab {
+    flex: 1; padding: 9px; border-radius: 9px;
+    border: none; background: none; cursor: pointer;
+    font-family: var(--font-body); font-size: 0.88rem; font-weight: 600;
+    color: rgba(26,10,46,0.55); transition: all 0.2s;
+  }
+  .tab.active { background: #fff; color: var(--dark); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+  /* ── Floating emoji bg ── */
+  .emoji-bg {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden;
+  }
+  .emoji-float {
+    position: absolute; font-size: 1.8rem; opacity: 0.07;
+    animation: floaty 20s linear infinite;
+  }
+  @keyframes floaty {
+    0%   { transform: translateY(110vh) rotate(0deg); }
+    100% { transform: translateY(-10vh) rotate(360deg); }
+  }
+
+  /* Divider */
+  .divider { height: 1px; background: var(--border); margin: 24px 0; }
+
+  @media (max-width: 600px) {
+    .form-row { grid-template-columns: 1fr; }
+    .stat-grid { grid-template-columns: repeat(2, 1fr); }
+    nav { padding: 0 14px; }
+    .form-card { padding: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Floating emoji background -->
+<div class="emoji-bg" id="emojisBg"></div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- ════════════════════════════════════
+     NAV
+════════════════════════════════════ -->
+<nav>
+  <div class="logo" onclick="showPage('home')">☕ <span>Spill</span></div>
+  <div class="nav-links">
+    <button class="nav-btn" onclick="showPage('feed')">Feed</button>
+    <button class="nav-btn" onclick="showPage('profile')">My Profile</button>
+    <button class="nav-btn primary" onclick="showPage('create')">+ Spill</button>
+  </div>
+</nav>
+
+<!-- ════════════════════════════════════
+     PAGE: HOME
+════════════════════════════════════ -->
+<div class="page active" id="page-home">
+  <div class="hero">
+    <div class="hero-badge">☕ The tea is HOT</div>
+    <h1>Time to <em>Spill</em><br>the Tea</h1>
+    <p>Create an exposure post about someone. They get a private link to review and approve before anything goes public. Fair, fun, and dramatic. 🎭</p>
+    <div class="hero-btns">
+      <button class="btn btn-pink" onclick="showPage('create')">☕ Spill on Someone</button>
+      <button class="btn btn-outline" onclick="showPage('feed')">👀 Browse the Feed</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">How it works ✨</div>
+    <div class="cards-grid">
+      <div class="spill-card pink">
+        <div style="font-size:2rem;margin-bottom:12px;">✍️</div>
+        <div class="card-name">1. Fill in the tea</div>
+        <div class="card-story">Enter details about your friend — name, age, relationship history, dating story, and more.</div>
+      </div>
+      <div class="spill-card yellow">
+        <div style="font-size:2rem;margin-bottom:12px;">🔗</div>
+        <div class="card-name">2. Share their link</div>
+        <div class="card-story">A unique approval link is generated. Send it to the person being exposed so they can review what you wrote.</div>
+      </div>
+      <div class="spill-card teal">
+        <div style="font-size:2rem;margin-bottom:12px;">✅</div>
+        <div class="card-name">3. They approve it</div>
+        <div class="card-story">Only after they click Approve does it go live on the public feed. They can also reject it — no hard feelings. 😅</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Latest <span>spills</span> 🔥</div>
+    <div id="home-preview-cards" class="cards-grid"></div>
+    <div style="text-align:center;margin-top:24px;">
+      <button class="btn btn-purple" onclick="showPage('feed')">See all spills →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     PAGE: CREATE
+════════════════════════════════════ -->
+<div class="page" id="page-create">
+  <div class="form-wrap">
+    <div class="form-title">Spill the Tea ☕</div>
+    <div class="form-subtitle">Fill in the details. The subject will get a private link to approve before anything goes public.</div>
+
+    <div class="alert alert-info">
+      💡 <span>The person you're writing about will receive a private link and must <strong>approve</strong> before this goes live. Their privacy is protected until then.</span>
+    </div>
+
+    <div class="form-card">
+      <div class="step-indicator">
+        <div class="step-dot active" id="dot0"></div>
+        <div class="step-dot" id="dot1"></div>
+        <div class="step-dot" id="dot2"></div>
+      </div>
+
+      <!-- Step 0: Basic Info -->
+      <div id="step-0">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Full Name <span class="required">*</span></label>
+            <input type="text" id="f-name" placeholder="e.g. Alex Rahman">
+          </div>
+          <div class="form-group">
+            <label>Age</label>
+            <input type="number" id="f-age" placeholder="e.g. 24" min="10" max="100">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Gender <span class="required">*</span></label>
+          <div class="radio-group" id="gender-group">
+            <div class="radio-pill"><input type="radio" name="gender" id="g-male" value="Male"><label for="g-male">Male</label></div>
+            <div class="radio-pill"><input type="radio" name="gender" id="g-female" value="Female"><label for="g-female">Female</label></div>
+            <div class="radio-pill"><input type="radio" name="gender" id="g-other" value="Other"><label for="g-other">Other</label></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Your nickname (the spiller)</label>
+          <input type="text" id="f-spiller" placeholder="e.g. Anonymous Friend 👀">
+        </div>
+        <div style="text-align:right;">
+          <button class="btn btn-pink btn-sm" onclick="nextStep(1)">Next →</button>
+        </div>
+      </div>
+
+      <!-- Step 1: Tea Details -->
+      <div id="step-1" style="display:none;">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Total relationships</label>
+            <input type="number" id="f-rels" placeholder="e.g. 4" min="0">
+          </div>
+          <div class="form-group">
+            <label>People dated</label>
+            <input type="number" id="f-dated" placeholder="e.g. 7" min="0">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Dating history (names/stories)</label>
+          <textarea id="f-dating-history" placeholder="e.g. Dated Rafi in 2021, then Sumaiya briefly in 2022..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Category tags</label>
+          <div class="radio-group">
+            <div class="radio-pill"><input type="checkbox" id="cat-drama" value="Drama"><label for="cat-drama" style="cursor:pointer;">🎭 Drama</label></div>
+            <div class="radio-pill"><input type="checkbox" id="cat-glow" value="Glow Up"><label for="cat-glow" style="cursor:pointer;">✨ Glow Up</label></div>
+            <div class="radio-pill"><input type="checkbox" id="cat-player" value="Player"><label for="cat-player" style="cursor:pointer;">😈 Player</label></div>
+            <div class="radio-pill"><input type="checkbox" id="cat-loyal" value="Loyal"><label for="cat-loyal" style="cursor:pointer;">❤️ Loyal</label></div>
+            <div class="radio-pill"><input type="checkbox" id="cat-wild" value="Wild Card"><label for="cat-wild" style="cursor:pointer;">🃏 Wild Card</label></div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;">
+          <button class="btn btn-outline btn-sm" onclick="nextStep(0)">← Back</button>
+          <button class="btn btn-pink btn-sm" onclick="nextStep(2)">Next →</button>
+        </div>
+      </div>
+
+      <!-- Step 2: Story + Submit -->
+      <div id="step-2" style="display:none;">
+        <div class="form-group">
+          <label>The Story / Extra Tea ☕ <span class="required">*</span></label>
+          <textarea id="f-story" placeholder="Tell the full story here. Be fun, be honest. Remember — they'll read this before it goes public!" style="min-height:140px;"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Other fun facts</label>
+          <input type="text" id="f-facts" placeholder="e.g. Cries at Disney movies, serial texter...">
+        </div>
+        <div class="form-group">
+          <label>Subject's contact link or how to send them the approval link</label>
+          <input type="text" id="f-contact" placeholder="e.g. Their WhatsApp, email, etc. (optional — just for your reference)">
+        </div>
+        <div class="divider"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+          <button class="btn btn-outline btn-sm" onclick="nextStep(1)">← Back</button>
+          <button class="btn btn-pink" onclick="submitSpill()">☕ Spill It!</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     PAGE: SUCCESS (after submit)
+════════════════════════════════════ -->
+<div class="page" id="page-success">
+  <div class="approval-wrap">
+    <div class="approval-icon icon-success" style="font-size:2.5rem;width:90px;height:90px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:#e0fdf4;margin:0 auto 24px;">☕</div>
+    <h2 style="font-family:var(--font-head);font-size:2rem;font-weight:900;margin-bottom:8px;">Tea has been prepared!</h2>
+    <p style="color:rgba(26,10,46,0.6);margin-bottom:28px;">Your spill is saved but <strong>not yet public</strong>. Share this link with <span id="success-name" style="color:var(--pink);font-weight:700;"></span> so they can approve or reject it.</p>
+
+    <div class="form-card" style="text-align:left;">
+      <div style="font-weight:700;margin-bottom:8px;">🔗 Their Approval Link</div>
+      <div class="link-box">
+        <span id="approval-link-display"></span>
+        <button class="copy-btn" onclick="copyLink()">Copy</button>
+      </div>
+      <p style="font-size:0.8rem;color:rgba(26,10,46,0.45);margin-top:10px;">Send this to them via WhatsApp, DM, or however you communicate. They must click Approve for it to go live.</p>
+    </div>
+
+    <div style="margin-top:28px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <button class="btn btn-pink" onclick="showPage('create')">☕ Spill Another</button>
+      <button class="btn btn-outline" onclick="showPage('feed')">👀 Browse Feed</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     PAGE: APPROVAL (unique link target)
+════════════════════════════════════ -->
+<div class="page" id="page-approval">
+  <div class="approval-wrap" id="approval-content">
+    <!-- filled dynamically -->
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     PAGE: FEED
+════════════════════════════════════ -->
+<div class="page" id="page-feed">
+  <div class="section">
+    <div class="form-title" style="font-family:var(--font-head);font-size:2rem;font-weight:900;margin-bottom:4px;">The Feed 🔥</div>
+    <p style="color:rgba(26,10,46,0.5);margin-bottom:24px;">All approved spills — verified by the subjects themselves.</p>
+
+    <div class="tabs">
+      <button class="tab active" onclick="setFeedTab('all',this)">All ☕</button>
+      <button class="tab" onclick="setFeedTab('drama',this)">Drama 🎭</button>
+      <button class="tab" onclick="setFeedTab('player',this)">Player 😈</button>
+      <button class="tab" onclick="setFeedTab('loyal',this)">Loyal ❤️</button>
+    </div>
+
+    <div id="feed-cards" class="cards-grid"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     PAGE: PROFILE
+════════════════════════════════════ -->
+<div class="page" id="page-profile">
+  <div class="profile-header">
+    <div class="profile-avatar" id="profile-av">👤</div>
+    <div class="profile-name" id="profile-name">My Spills</div>
+    <div class="profile-sub">Your spill activity</div>
+  </div>
+  <div class="profile-body">
+    <div class="stat-grid" id="profile-stats"></div>
+    <div class="storage-bar">
+      <span style="font-size:1rem;">💾</span>
+      <div class="bar-track"><div class="bar-fill" id="storage-fill" style="width:0%"></div></div>
+      <div class="bar-label" id="storage-label">0 KB / 10 MB</div>
+    </div>
+    <div class="tabs">
+      <button class="tab active" onclick="setProfileTab('mine',this)">My Spills</button>
+      <button class="tab" onclick="setProfileTab('pending',this)">Pending 🕐</button>
+    </div>
+    <div id="profile-tab-content"></div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// DATA LAYER
+// ══════════════════════════════════════════
+const STORAGE_KEY = 'spill_app_v1';
+const MAX_STORAGE  = 10 * 1024 * 1024; // 10 MB in bytes
+
+function getData() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || { spills: [] }; }
+  catch { return { spills: [] }; }
+}
+function saveData(d) {
+  const str = JSON.stringify(d);
+  if (new Blob([str]).size > MAX_STORAGE) { showToast('⚠️ Storage full! Delete some spills first.'); return false; }
+  localStorage.setItem(STORAGE_KEY, str);
+  return true;
+}
+function getSpills()  { return getData().spills; }
+function saveSpill(s) {
+  const d = getData(); d.spills.push(s); return saveData(d);
+}
+function updateSpill(id, patch) {
+  const d = getData();
+  const idx = d.spills.findIndex(s => s.id === id);
+  if (idx === -1) return false;
+  d.spills[idx] = { ...d.spills[idx], ...patch };
+  return saveData(d);
+}
+function getSpillById(id) { return getSpills().find(s => s.id === id) || null; }
+function storageUsed() {
+  const str = localStorage.getItem(STORAGE_KEY) || '';
+  return new Blob([str]).size;
+}
+
+// ══════════════════════════════════════════
+// ROUTING / PAGES
+// ══════════════════════════════════════════
+let currentStep = 0;
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  window.scrollTo(0, 0);
+  if (name === 'feed')    renderFeed('all');
+  if (name === 'profile') renderProfile();
+  if (name === 'home')    renderHomePreview();
+  if (name === 'create')  resetForm();
+}
+
+// Check URL hash for approval links on load
+function checkHash() {
+  const h = location.hash;
+  if (h.startsWith('#approve/')) {
+    const id = h.replace('#approve/', '');
+    showApprovalPage(id);
+  }
+}
+
+// ══════════════════════════════════════════
+// MULTI-STEP FORM
+// ══════════════════════════════════════════
+function resetForm() {
+  currentStep = 0;
+  [0,1,2].forEach(i => {
+    document.getElementById('step-' + i).style.display = i === 0 ? 'block' : 'none';
+  });
+  updateDots(0);
+  // clear fields
+  ['f-name','f-age','f-spiller','f-rels','f-dated','f-dating-history','f-story','f-facts','f-contact'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  document.querySelectorAll('input[name=gender]').forEach(r => r.checked = false);
+  document.querySelectorAll('#step-1 input[type=checkbox]').forEach(c => c.checked = false);
+}
+
+function nextStep(to) {
+  if (to > currentStep) {
+    if (to === 1 && !validate0()) return;
+    if (to === 2 && !validate1()) return;
+  }
+  document.getElementById('step-' + currentStep).style.display = 'none';
+  currentStep = to;
+  document.getElementById('step-' + to).style.display = 'block';
+  updateDots(to);
+}
+
+function updateDots(active) {
+  [0,1,2].forEach(i => {
+    const d = document.getElementById('dot' + i);
+    d.classList.remove('active','done');
+    if (i === active) d.classList.add('active');
+    else if (i < active) d.classList.add('done');
+  });
+}
+
+function validate0() {
+  if (!document.getElementById('f-name').value.trim()) { showToast('⚠️ Name is required!'); return false; }
+  if (!document.querySelector('input[name=gender]:checked')) { showToast('⚠️ Please select a gender!'); return false; }
+  return true;
+}
+function validate1() { return true; }
+
+// ══════════════════════════════════════════
+// SUBMIT
+// ══════════════════════════════════════════
+function submitSpill() {
+  if (!document.getElementById('f-story').value.trim()) {
+    showToast('⚠️ Please write the story!'); return;
+  }
+  const gender = document.querySelector('input[name=gender]:checked')?.value || '';
+  const tags = [];
+  ['drama','glow','player','loyal','wild'].forEach(t => {
+    if (document.getElementById('cat-' + t)?.checked) tags.push(document.getElementById('cat-' + t).value);
+  });
+  const spill = {
+    id:           'spill_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+    name:         document.getElementById('f-name').value.trim(),
+    age:          document.getElementById('f-age').value || '',
+    gender,
+    spiller:      document.getElementById('f-spiller').value.trim() || 'Anonymous 👀',
+    relationships:document.getElementById('f-rels').value || '?',
+    dated:        document.getElementById('f-dated').value || '?',
+    datingHistory:document.getElementById('f-dating-history').value.trim(),
+    story:        document.getElementById('f-story').value.trim(),
+    facts:        document.getElementById('f-facts').value.trim(),
+    tags,
+    status:       'pending',   // pending | approved | rejected
+    createdAt:    new Date().toISOString(),
+    reactions:    { fire: 0, lol: 0, shocked: 0 },
+  };
+
+  if (!saveSpill(spill)) return;
+
+  const approvalLink = location.origin + location.pathname + '#approve/' + spill.id;
+  document.getElementById('success-name').textContent = spill.name;
+  document.getElementById('approval-link-display').textContent = approvalLink;
+  window._lastApprovalLink = approvalLink;
+
+  showPage('success');
+  showToast('☕ Spill created! Share the link with ' + spill.name);
+}
+
+function copyLink() {
+  navigator.clipboard.writeText(window._lastApprovalLink || '').then(() => showToast('🔗 Link copied!'));
+}
+
+// ══════════════════════════════════════════
+// APPROVAL PAGE
+// ══════════════════════════════════════════
+function showApprovalPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-approval').classList.add('active');
+  window.scrollTo(0, 0);
+
+  const spill = getSpillById(id);
+  const wrap = document.getElementById('approval-content');
+
+  if (!spill) {
+    wrap.innerHTML = `
+      <div class="approval-icon icon-rejected">❌</div>
+      <h2 style="font-family:var(--font-head);font-size:1.8rem;font-weight:900;margin-bottom:8px;">Link not found</h2>
+      <p style="color:rgba(26,10,46,0.6);">This approval link is invalid or has expired.</p>
+      <div style="margin-top:24px;"><button class="btn btn-outline" onclick="showPage('home')">← Back Home</button></div>`;
+    return;
+  }
+
+  if (spill.status === 'approved') {
+    wrap.innerHTML = `
+      <div class="approval-icon icon-success" style="width:80px;height:80px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:#e0fdf4;font-size:2rem;margin:0 auto 24px;">✅</div>
+      <h2 style="font-family:var(--font-head);font-size:1.8rem;font-weight:900;margin-bottom:8px;">Already approved!</h2>
+      <p style="color:rgba(26,10,46,0.6);">This spill about <strong>${esc(spill.name)}</strong> is live on the feed.</p>
+      <div style="margin-top:24px;"><button class="btn btn-teal" onclick="showPage('feed')">View on Feed →</button></div>`;
+    return;
+  }
+
+  if (spill.status === 'rejected') {
+    wrap.innerHTML = `
+      <div style="width:80px;height:80px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:#fff1f0;font-size:2rem;margin:0 auto 24px;">🚫</div>
+      <h2 style="font-family:var(--font-head);font-size:1.8rem;font-weight:900;margin-bottom:8px;">Spill rejected</h2>
+      <p style="color:rgba(26,10,46,0.6);">You already rejected this spill. It will not be published.</p>
+      <div style="margin-top:24px;"><button class="btn btn-outline" onclick="showPage('home')">← Back Home</button></div>`;
+    return;
+  }
+
+  // Pending — show preview + approve/reject
+  const tagsHtml = (spill.tags || []).map(t => `<span class="tag tag-pink">${esc(t)}</span>`).join('');
+  const colorClass = ['pink','yellow','teal','purple'][Math.floor(Math.random()*4)];
+
+  wrap.innerHTML = `
+    <div style="width:80px;height:80px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:#ffeef4;font-size:2.2rem;margin:0 auto 24px;">👀</div>
+    <h2 style="font-family:var(--font-head);font-size:1.8rem;font-weight:900;margin-bottom:8px;">Someone spilled the tea on you!</h2>
+    <p style="color:rgba(26,10,46,0.6);margin-bottom:28px;">Review what they wrote. You decide — approve to go public, or reject to keep it hidden. 💅</p>
+
+    <div class="spill-card ${colorClass}" style="text-align:left;margin-bottom:24px;">
+      <div class="card-header">
+        <div class="avatar av-pink">${esc(spill.name).charAt(0).toUpperCase()}</div>
+        <div>
+          <div class="card-name">${esc(spill.name)}${spill.age ? ', ' + spill.age : ''} · ${esc(spill.gender)}</div>
+          <div class="card-meta">Spilled by ${esc(spill.spiller)}</div>
+        </div>
+      </div>
+      ${tagsHtml ? `<div style="margin:8px 0;">${tagsHtml}</div>` : ''}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0;">
+        <div style="background:#ffeef4;border-radius:10px;padding:10px;text-align:center;">
+          <div style="font-family:var(--font-head);font-size:1.5rem;font-weight:900;color:var(--pink);">${esc(spill.relationships)}</div>
+          <div style="font-size:0.72rem;color:rgba(26,10,46,0.5);">Relationships</div>
+        </div>
+        <div style="background:#f3e8ff;border-radius:10px;padding:10px;text-align:center;">
+          <div style="font-family:var(--font-head);font-size:1.5rem;font-weight:900;color:var(--purple);">${esc(spill.dated)}</div>
+          <div style="font-size:0.72rem;color:rgba(26,10,46,0.5);">People dated</div>
+        </div>
+      </div>
+      ${spill.datingHistory ? `<div style="font-size:0.85rem;color:rgba(26,10,46,0.6);margin-bottom:8px;"><strong>Dating history:</strong> ${esc(spill.datingHistory)}</div>` : ''}
+      ${spill.facts ? `<div style="font-size:0.85rem;color:rgba(26,10,46,0.6);margin-bottom:8px;"><strong>Fun facts:</strong> ${esc(spill.facts)}</div>` : ''}
+      <div class="card-story">${esc(spill.story)}</div>
+    </div>
+
+    <div class="alert alert-warning" style="text-align:left;">
+      ⚠️ <span>Once approved, this will be visible to <strong>everyone</strong> on the public feed.</span>
+    </div>
+
+    <div style="display:flex;gap:12px;justify-content:center;margin-top:20px;flex-wrap:wrap;">
+      <button class="btn btn-teal" onclick="handleApproval('${esc(id)}', true)">✅ Approve — Go Public</button>
+      <button class="btn" style="background:#fff1f0;color:#e03e3e;border:2px solid #fecaca;" onclick="handleApproval('${esc(id)}', false)">🚫 Reject</button>
+    </div>`;
+}
+
+function handleApproval(id, approve) {
+  const ok = updateSpill(id, {
+    status: approve ? 'approved' : 'rejected',
+    approvedAt: new Date().toISOString()
+  });
+  if (!ok) { showToast('Something went wrong.'); return; }
+  const spill = getSpillById(id);
+  const wrap = document.getElementById('approval-content');
+  if (approve) {
+    wrap.innerHTML = `
+      <div style="width:90px;height:90px;border-radius:50%;background:#e0fdf4;display:flex;align-items:center;justify-content:center;font-size:2.5rem;margin:0 auto 24px;">🎉</div>
+      <h2 style="font-family:var(--font-head);font-size:2rem;font-weight:900;margin-bottom:8px;">It's live!</h2>
+      <p style="color:rgba(26,10,46,0.6);margin-bottom:28px;">The spill about <strong>${esc(spill?.name || '')}</strong> is now public. You're so brave. 💅</p>
+      <button class="btn btn-teal" onclick="showPage('feed')">See it on the Feed →</button>`;
+    showToast('🎉 Approved! The spill is now live!');
+  } else {
+    wrap.innerHTML = `
+      <div style="width:90px;height:90px;border-radius:50%;background:#fff1f0;display:flex;align-items:center;justify-content:center;font-size:2.5rem;margin:0 auto 24px;">🚫</div>
+      <h2 style="font-family:var(--font-head);font-size:2rem;font-weight:900;margin-bottom:8px;">Spill rejected.</h2>
+      <p style="color:rgba(26,10,46,0.6);margin-bottom:28px;">You chose to keep this private. Respect. 🤐</p>
+      <button class="btn btn-outline" onclick="showPage('home')">← Back Home</button>`;
+    showToast('🚫 Spill rejected and kept private.');
+  }
+  // clear the hash so refreshing doesn't re-trigger
+  history.replaceState(null, '', location.pathname);
+}
+
+// ══════════════════════════════════════════
+// FEED
+// ══════════════════════════════════════════
+let currentFeedTab = 'all';
+
+function setFeedTab(tab, el) {
+  currentFeedTab = tab;
+  document.querySelectorAll('#page-feed .tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderFeed(tab);
+}
+
+const cardColors = ['pink','yellow','teal','purple'];
+const avColors   = ['av-pink','av-teal','av-yellow','av-purple'];
+
+function renderFeed(tab) {
+  const container = document.getElementById('feed-cards');
+  let spills = getSpills().filter(s => s.status === 'approved');
+
+  if (tab !== 'all') {
+    spills = spills.filter(s => (s.tags || []).map(t => t.toLowerCase()).includes(tab));
+  }
+
+  spills.sort((a,b) => new Date(b.approvedAt||b.createdAt) - new Date(a.approvedAt||a.createdAt));
+
+  if (!spills.length) {
+    container.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">
+      <div class="empty-icon">☕</div>
+      <p>No ${tab === 'all' ? '' : tab + ' '}spills yet.<br>Be the first to spill the tea!</p>
+    </div>`;
+    return;
+  }
+
+  container.innerHTML = spills.map((s, i) => spillCardHTML(s, i)).join('');
+}
+
+function spillCardHTML(s, i) {
+  const cc = cardColors[i % 4];
+  const av = avColors[i % 4];
+  const tagsHtml = (s.tags||[]).map(t => `<span class="tag tag-pink">${esc(t)}</span>`).join('');
+  const dateStr = new Date(s.approvedAt||s.createdAt).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+  return `
+  <div class="spill-card ${cc}">
+    <div class="card-header">
+      <div class="avatar ${av}">${esc(s.name).charAt(0).toUpperCase()}</div>
+      <div>
+        <div class="card-name">${esc(s.name)}${s.age ? ', ' + s.age : ''}</div>
+        <div class="card-meta">${esc(s.gender)} · Spilled by ${esc(s.spiller)}</div>
+      </div>
+    </div>
+    ${tagsHtml ? `<div style="margin-bottom:8px;">${tagsHtml}</div>` : ''}
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      ${s.relationships !== '?' ? `<div style="background:#ffeef4;border-radius:8px;padding:6px 10px;font-size:0.78rem;"><strong style="color:var(--pink);">${esc(s.relationships)}</strong> relationships</div>` : ''}
+      ${s.dated !== '?' ? `<div style="background:#f3e8ff;border-radius:8px;padding:6px 10px;font-size:0.78rem;"><strong style="color:var(--purple);">${esc(s.dated)}</strong> people dated</div>` : ''}
+    </div>
+    ${s.story ? `<div class="card-story">${esc(s.story).slice(0,180)}${s.story.length>180?'...':''}</div>` : ''}
+    <div class="card-footer">
+      <div class="card-date">📅 ${dateStr}</div>
+      <div style="display:flex;gap:6px;">
+        <button class="react-btn" onclick="react('${s.id}','fire',this)">🔥 ${s.reactions?.fire||0}</button>
+        <button class="react-btn" onclick="react('${s.id}','lol',this)">😂 ${s.reactions?.lol||0}</button>
+        <button class="react-btn" onclick="react('${s.id}','shocked',this)">😱 ${s.reactions?.shocked||0}</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function react(id, type, btn) {
+  const d = getData();
+  const s = d.spills.find(x => x.id === id);
+  if (!s) return;
+  if (!s.reactions) s.reactions = { fire:0, lol:0, shocked:0 };
+  s.reactions[type]++;
+  saveData(d);
+  // update button text
+  const emojis = { fire:'🔥', lol:'😂', shocked:'😱' };
+  btn.textContent = emojis[type] + ' ' + s.reactions[type];
+  showToast(emojis[type] + ' Reacted!');
+}
+
+// ══════════════════════════════════════════
+// HOME PREVIEW
+// ══════════════════════════════════════════
+function renderHomePreview() {
+  const container = document.getElementById('home-preview-cards');
+  const spills = getSpills().filter(s => s.status === 'approved').slice(-3).reverse();
+  if (!spills.length) {
+    container.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">☕</div><p>No approved spills yet. Be the first!</p></div>`;
+    return;
+  }
+  container.innerHTML = spills.map((s,i) => spillCardHTML(s, i)).join('');
+}
+
+// ══════════════════════════════════════════
+// PROFILE
+// ══════════════════════════════════════════
+let currentProfileTab = 'mine';
+
+function setProfileTab(tab, el) {
+  currentProfileTab = tab;
+  document.querySelectorAll('#page-profile .tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderProfileTabContent();
+}
+
+function renderProfile() {
+  const spills  = getSpills();
+  const approved = spills.filter(s => s.status === 'approved').length;
+  const pending  = spills.filter(s => s.status === 'pending').length;
+  const rejected = spills.filter(s => s.status === 'rejected').length;
+  const totalReacts = spills.reduce((sum, s) => sum + (s.reactions?.fire||0) + (s.reactions?.lol||0) + (s.reactions?.shocked||0), 0);
+
+  document.getElementById('profile-stats').innerHTML = `
+    <div class="stat-card"><div class="stat-num">${spills.length}</div><div class="stat-lbl">Total spills</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--teal);">${approved}</div><div class="stat-lbl">Approved</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--yellow);">${pending}</div><div class="stat-lbl">Pending</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--purple);">${totalReacts}</div><div class="stat-lbl">Reactions</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--coral);">${rejected}</div><div class="stat-lbl">Rejected</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:rgba(26,10,46,0.5);">10 MB</div><div class="stat-lbl">Storage limit</div></div>
+  `;
+
+  // Storage bar
+  const used = storageUsed();
+  const pct  = Math.min(100, (used / MAX_STORAGE) * 100);
+  document.getElementById('storage-fill').style.width = pct + '%';
+  document.getElementById('storage-label').textContent = formatBytes(used) + ' / 10 MB';
+
+  renderProfileTabContent();
+}
+
+function renderProfileTabContent() {
+  const container = document.getElementById('profile-tab-content');
+  const spills = getSpills();
+
+  if (currentProfileTab === 'mine') {
+    const mine = spills.filter(s => s.status === 'approved');
+    if (!mine.length) {
+      container.innerHTML = `<div class="empty-state"><div class="empty-icon">☕</div><p>No approved spills yet.</p></div>`;
+      return;
+    }
+    container.innerHTML = `<div class="cards-grid">${mine.map((s,i) => spillCardHTML(s, i)).join('')}</div>`;
+  } else {
+    const pending = spills.filter(s => s.status === 'pending');
+    if (!pending.length) {
+      container.innerHTML = `<div class="empty-state"><div class="empty-icon">🕐</div><p>No pending spills.</p></div>`;
+      return;
+    }
+    container.innerHTML = pending.map(s => {
+      const link = location.origin + location.pathname + '#approve/' + s.id;
+      return `
+      <div class="pending-card">
+        <div class="pending-info">
+          <div class="pending-name">${esc(s.name)}${s.age ? ', ' + s.age : ''}</div>
+          <div class="pending-sub">Spilled by ${esc(s.spiller)} · ${new Date(s.createdAt).toLocaleDateString('en-GB')}</div>
+          <div class="link-box" style="margin-top:8px;">
+            <span style="font-size:0.75rem;">${link}</span>
+            <button class="copy-btn" onclick="navigator.clipboard.writeText('${link}').then(()=>showToast('🔗 Copied!'))">Copy</button>
+          </div>
+        </div>
+        <div class="pending-actions">
+          <button class="btn btn-sm" style="background:#fff1f0;color:#e03e3e;border:1px solid #fecaca;" onclick="deleteSpill('${s.id}')">Delete</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+}
+
+function deleteSpill(id) {
+  if (!confirm('Delete this spill? This cannot be undone.')) return;
+  const d = getData();
+  d.spills = d.spills.filter(s => s.id !== id);
+  saveData(d);
+  renderProfile();
+  showToast('🗑️ Spill deleted.');
+}
+
+// ══════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════
+function esc(str) {
+  if (str == null) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function formatBytes(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
+  return (bytes/(1024*1024)).toFixed(2) + ' MB';
+}
+
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ══════════════════════════════════════════
+// FLOATING EMOJI BG
+// ══════════════════════════════════════════
+(function() {
+  const emojis = ['☕','💅','🎭','🔥','😱','💬','👀','🤭','💔','✨'];
+  const bg = document.getElementById('emojisBg');
+  for (let i = 0; i < 18; i++) {
+    const el = document.createElement('div');
+    el.className = 'emoji-float';
+    el.textContent = emojis[i % emojis.length];
+    el.style.left   = Math.random() * 100 + 'vw';
+    el.style.animationDuration = (15 + Math.random() * 20) + 's';
+    el.style.animationDelay    = -(Math.random() * 20) + 's';
+    bg.appendChild(el);
+  }
+})();
+
+// ══════════════════════════════════════════
+// SEED DEMO DATA (first run)
+// ══════════════════════════════════════════
+(function seedDemo() {
+  if (getSpills().length > 0) return;
+  const demos = [
+    { id:'demo1', name:'Rafi Ahmed', age:'23', gender:'Male', spiller:'Bestie 👀', relationships:'5', dated:'8', datingHistory:'Dated Nadia in 2020, then had a thing with Tina from office.', story:'Rafi has the AUDACITY to claim he\'s "not a player" but somehow has had 5 relationships before age 23. The man cries at romcoms but ghosted three people this year alone. 😭', facts:'Cries at Disney movies, owns 2 cats, serial texter', tags:['Drama','Player'], status:'approved', createdAt:'2025-10-01T10:00:00Z', approvedAt:'2025-10-01T12:00:00Z', reactions:{fire:12,lol:8,shocked:5} },
+    { id:'demo2', name:'Priya Sharma', age:'21', gender:'Female', spiller:'Roommie ☕', relationships:'2', dated:'3', datingHistory:'Long-term with Arjun, then a brief thing with someone from her uni.', story:'Priya presents as shy and quiet but she has LAYERS. Two serious relationships, ghosted Arjun on his birthday, and somehow both exes still text her. Queen behavior honestly. 👑', facts:'Pretends to hate drama but always has the tea first', tags:['Drama','Loyal'], status:'approved', createdAt:'2025-10-03T09:00:00Z', approvedAt:'2025-10-03T11:00:00Z', reactions:{fire:20,lol:15,shocked:9} },
+  ];
+  const d = getData();
+  d.spills = demos;
+  saveData(d);
+})();
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+checkHash();
+if (!location.hash.startsWith('#approve/')) {
+  renderHomePreview();
+}
+</script>
+</body>
+</html>
