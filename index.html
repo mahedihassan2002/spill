@@ -800,7 +800,8 @@ function submitSpill() {
     story:        document.getElementById('f-story').value.trim(),
     facts:        document.getElementById('f-facts').value.trim(),
     tags,
-    status:       'pending',   // pending | approved | rejected
+    status:       'approved'
+    approvedAt:   new Date().toISOString(),
     createdAt:    new Date().toISOString(),
     reactions:    { fire: 0, lol: 0, shocked: 0 },
   };
@@ -1149,8 +1150,8 @@ function showToast(msg) {
 (function seedDemo() {
   if (getSpills().length > 0) return;
   const demos = [
-    { id:'demo1', name:'Rafi Ahmed', age:'23', gender:'Male', spiller:'Bestie 👀', relationships:'5', dated:'8', datingHistory:'Dated Nadia in 2020, then had a thing with Tina from office.', story:'Rafi has the AUDACITY to claim he\'s "not a player" but somehow has had 5 relationships before age 23. The man cries at romcoms but ghosted three people this year alone. 😭', facts:'Cries at Disney movies, owns 2 cats, serial texter', tags:['Drama','Player'], status:'approved', createdAt:'2025-10-01T10:00:00Z', approvedAt:'2025-10-01T12:00:00Z', reactions:{fire:12,lol:8,shocked:5} },
-    { id:'demo2', name:'Priya Sharma', age:'21', gender:'Female', spiller:'Roommie ☕', relationships:'2', dated:'3', datingHistory:'Long-term with Arjun, then a brief thing with someone from her uni.', story:'Priya presents as shy and quiet but she has LAYERS. Two serious relationships, ghosted Arjun on his birthday, and somehow both exes still text her. Queen behavior honestly. 👑', facts:'Pretends to hate drama but always has the tea first', tags:['Drama','Loyal'], status:'approved', createdAt:'2025-10-03T09:00:00Z', approvedAt:'2025-10-03T11:00:00Z', reactions:{fire:20,lol:15,shocked:9} },
+    { id:'demo1', name:'Rafi Ahmed', age:'23', gender:'Male', spiller:'Bestie 👀', relationships:'5', dated:'8', datingHistory:'Dated Nadia in 2020, then had a thing with Tanha from office.', story:'Rafi has the AUDACITY to claim he\'s "not a player" but somehow has had 5 relationships before age 23. The man cries at romcoms but ghosted three people this year alone. 😭', facts:'Cries at Disney movies, owns 2 cats, serial texter', tags:['Drama','Player'], status:'approved', createdAt:'2025-10-01T10:00:00Z', approvedAt:'2025-10-01T12:00:00Z', reactions:{fire:12,lol:8,shocked:5} },
+    { id:'demo2', name:'Tasnim Isha', age:'21', gender:'Female', spiller:'Roommie ☕', relationships:'2', dated:'3', datingHistory:'Long-term with Saif, then a brief thing with someone from her uni.', story:'Isha presents as shy and quiet but she has LAYERS. Two serious relationships, ghosted Arjun on his birthday, and somehow both exes still text her. Queen behavior honestly. 👑', facts:'Pretends to hate drama but always has the tea first', tags:['Drama','Loyal'], status:'approved', createdAt:'2025-10-03T09:00:00Z', approvedAt:'2025-10-03T11:00:00Z', reactions:{fire:20,lol:15,shocked:9} },
   ];
   const d = getData();
   d.spills = demos;
